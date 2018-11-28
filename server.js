@@ -26,12 +26,16 @@ const sessionConfig = {
 const server = express();
 server.use(session(sessionConfig));
 server.use(express.json());
-server.use(cors());
+const config = {
+  origin: 'http://localhost:3000',
+  credentials: true, // enable set cookie
+};
+server.use(cors(config));
 
 server.post('/api/register', async (req, res) => {
   try {
-    let { username, password } = req.body;
-    let hash = bcrypt.hashSync(password, 12);
+    const { username, password } = req.body;
+    const hash = bcrypt.hashSync(password, 12);
     const [id] = await db('users').insert({ username, password: hash });
     res.status(201).json({ id });
   } catch (err) {
@@ -42,11 +46,11 @@ server.post('/api/register', async (req, res) => {
 
 server.post('/api/login', async (req, res) => {
   try {
-    let { username, password } = req.body;
-    if (!username || !password ) {
-      return res.status(400).json({ message: 'Send all required fields'});
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Send all required fields' });
     }
-    const { password: hash, id } = await db('users').select('password', 'id').where('username', username).first()
+    const { password: hash, id } = await db('users').select('password', 'id').where('username', username).first();
     if (!hash || !bcrypt.compareSync(password, hash)) {
       return res.status(403).json({ message: 'Could not authenticate.' });
     }
@@ -62,7 +66,7 @@ server.post('/api/logout', async (req, res) => {
   if (req.session.userId) {
     req.session.destroy((err) => {
       if (err) {
-        return res.status(500).json({ message: 'an error occurred'});
+        return res.status(500).json({ message: 'an error occurred' });
       }
       return res.status(200).send();
     });
